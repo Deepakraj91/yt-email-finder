@@ -2,8 +2,5 @@ services:
   - type: web
     name: yt-email-finder
     runtime: python
-    buildCommand: pip install -r requirements.txt && python -m playwright install chromium --with-deps
-    startCommand: gunicorn app:app --timeout 120
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
