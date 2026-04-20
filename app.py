@@ -71,20 +71,23 @@ def scrape_email_requests(handle: str) -> str | None:
 def scrape_email_playwright(handle: str) -> str | None:
     try:
         from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
-    except ImportError:
+    except Exception:
         return None
 
     url = f'https://www.youtube.com/{handle}/about'
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True,
-            args=[
-                '--no-sandbox',
-                '--disable-blink-features=AutomationControlled',
-                '--disable-dev-shm-usage',
-            ]
-        )
+        try:
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    '--no-sandbox',
+                    '--disable-blink-features=AutomationControlled',
+                    '--disable-dev-shm-usage',
+                ]
+            )
+        except Exception:
+            return None
         context = browser.new_context(
             user_agent=(
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -199,22 +202,28 @@ def index():
 
 @app.route('/find-emails', methods=['POST'])
 def find_emails():
-    data = request.get_json()
-    raw_handles = data.get('handles', '')
-    handles = [clean_handle(h) for h in raw_handles.splitlines() if h.strip()]
-    handles = list(dict.fromkeys(handles))  # deduplicate, preserve order
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        raw_handles = data.get('handles', '')
+        handles = [clean_handle(h) for h in raw_handles.splitlines() if h.strip()]
+        handles = list(dict.fromkeys(handles))  # deduplicate, preserve order
 
-    results = []
-    for handle in handles:
-        email = scrape_email(handle)
-        results.append({
-            'handle': handle,
-            'email': email or '',
-            'status': 'found' if email else 'not_found'
-        })
-        time.sleep(1.5)
+        results = []
+        for handle in handles:
+            try:
+                email = scrape_email(handle)
+            except Exception:
+                email = None
+            results.append({
+                'handle': handle,
+                'email': email or '',
+                'status': 'found' if email else 'not_found'
+            })
+            time.sleep(1.5)
 
-    return jsonify(results)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/export-csv', methods=['POST'])

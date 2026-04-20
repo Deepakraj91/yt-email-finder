@@ -333,13 +333,24 @@
         });
 
         clearInterval(ticker);
-        lastResults = await resp.json();
+
+        const contentType = resp.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          const txt = await resp.text();
+          throw new Error('Server error: ' + txt.slice(0, 200));
+        }
+
+        const json = await resp.json();
+        if (json.error) throw new Error(json.error);
+
+        lastResults = json;
         fill.style.width = '100%';
         text.textContent = `Done! ${lastResults.length} channels scanned.`;
 
         renderResults(lastResults);
       } catch (err) {
         clearInterval(ticker);
+        fill.style.width = '0%';
         text.textContent = 'Error: ' + err.message;
       }
 
