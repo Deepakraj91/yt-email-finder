@@ -4,6 +4,7 @@ import requests
 import io
 import csv
 import os
+from typing import Optional
 from flask import Flask, render_template, request, jsonify, Response
 
 app = Flask(__name__)
@@ -36,7 +37,7 @@ def _filter_emails(emails):
 
 # ---------- Method 1: fast requests-based scrape ----------
 
-def scrape_email_requests(handle: str) -> str | None:
+def scrape_email_requests(handle: str) -> Optional[str]:
     url = f'https://www.youtube.com/{handle}/about'
     try:
         resp = requests.get(url, headers=HEADERS, timeout=15)
@@ -68,7 +69,7 @@ def scrape_email_requests(handle: str) -> str | None:
 
 # ---------- Method 2: Playwright — click "View email address" ----------
 
-def scrape_email_playwright(handle: str) -> str | None:
+def scrape_email_playwright(handle: str) -> Optional[str]:
     try:
         from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
     except Exception:
@@ -183,7 +184,7 @@ def scrape_email_playwright(handle: str) -> str | None:
 
 # ---------- Combined scraper: fast first, browser fallback ----------
 
-def scrape_email(handle: str) -> str | None:
+def scrape_email(handle: str) -> Optional[str]:
     # Try fast method first
     email = scrape_email_requests(handle)
     if email:
