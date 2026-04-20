@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YT Email Finder</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #f1f1f1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    header h1 span {
+      color: #ff0000;
+    }
+
+    header p {
+      color: #aaa;
+      margin-top: 8px;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 28px;
+      width: 100%;
+      max-width: 720px;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #aaa;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    textarea {
+      width: 100%;
+      height: 180px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #f1f1f1;
+      font-size: 0.95rem;
+      padding: 12px 14px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: 'Cascadia Code', 'Courier New', monospace;
+    }
+
+    textarea:focus { border-color: #ff0000; }
+
+    .hint {
+      font-size: 0.78rem;
+      color: #666;
+      margin-top: 6px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    #findBtn {
+      background: #ff0000;
+      color: #fff;
+      flex: 1;
+    }
+
+    #findBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #clearBtn {
+      background: #2a2a2a;
+      color: #ccc;
+    }
+
+    /* Progress */
+    #progress {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .progress-bar-wrap {
+      background: #2a2a2a;
+      border-radius: 6px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: #ff0000;
+      border-radius: 6px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .progress-text {
+      font-size: 0.82rem;
+      color: #aaa;
+    }
+
+    /* Results */
+    #resultsCard { display: none; }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .results-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      font-size: 0.82rem;
+    }
+
+    .stat-found { color: #4caf50; font-weight: 600; }
+    .stat-missing { color: #ff5252; font-weight: 600; }
+
+    #exportBtn {
+      background: #1e3a1e;
+      color: #4caf50;
+      border: 1px solid #2e5a2e;
+      font-size: 0.82rem;
+      padding: 7px 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 10px 12px;
+      background: #111;
+      color: #888;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #222;
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover { background: #222; }
+
+    tbody td {
+      padding: 10px 12px;
+      vertical-align: middle;
+    }
+
+    .handle-cell { font-family: monospace; color: #ccc; }
+
+    .email-found { color: #4caf50; }
+    .email-missing { color: #555; font-style: italic; }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+
+    .badge-found { background: #1b3d1b; color: #4caf50; }
+    .badge-missing { background: #2d1a1a; color: #ff5252; }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #444;
+      border-top-color: #ff0000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.75rem;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1><span>YT</span> Email Finder</h1>
+    <p>Paste YouTube channel handles and find their public contact emails in bulk</p>
+  </header>
+
+  <!-- Input Card -->
+  <div class="card">
+    <label>YouTube Handles</label>
+    <textarea id="handlesInput" placeholder="@tparkcrypto&#10;@TravisBisht&#10;@CryptoLogicJohn&#10;&#10;One handle per line. @ is optional."></textarea>
+    <p class="hint">One handle per line &mdash; duplicates are ignored automatically.</p>
+
+    <div class="actions">
+      <button id="findBtn" onclick="findEmails()">Find Emails</button>
+      <button id="clearBtn" onclick="clearAll()">Clear</button>
+    </div>
+
+    <div id="progress">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <p class="progress-text" id="progressText"></p>
+    </div>
+  </div>
+
+  <!-- Results Card -->
+  <div class="card" id="resultsCard">
+    <div class="results-header">
+      <h2>Results</h2>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div class="stats">
+          <span>Found: <span class="stat-found" id="countFound">0</span></span>
+          <span>Missing: <span class="stat-missing" id="countMissing">0</span></span>
+        </div>
+        <button id="exportBtn" onclick="exportCSV()">Export CSV</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Handle</th>
+          <th>Email</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+  </div>
+
+  <footer>Emails are scraped from each channel's public About page &mdash; only publicly listed emails are returned.</footer>
+
+  <script>
+    let lastResults = [];
+
+    async function findEmails() {
+      const raw = document.getElementById('handlesInput').value.trim();
+      if (!raw) return;
+
+      const handles = [...new Set(
+        raw.split('\n').map(h => h.trim()).filter(Boolean)
+      )];
+
+      const findBtn = document.getElementById('findBtn');
+      findBtn.disabled = true;
+      findBtn.innerHTML = '<span class="spinner"></span>Searching...';
+
+      document.getElementById('resultsCard').style.display = 'none';
+      document.getElementById('progress').style.display = 'block';
+
+      const fill = document.getElementById('progressFill');
+      const text = document.getElementById('progressText');
+      fill.style.width = '0%';
+      text.textContent = `Starting... 0 / ${handles.length}`;
+
+      // Poll progress via streaming approach — we post and get back JSON
+      // Simulate incremental progress while waiting
+      let fake = 0;
+      const ticker = setInterval(() => {
+        fake = Math.min(fake + (90 / handles.length / 3), 90);
+        fill.style.width = fake + '%';
+        text.textContent = `Scanning channels... please wait`;
+      }, 1200);
+
+      try {
+        const resp = await fetch('/find-emails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ handles: raw })
+        });
+
+        clearInterval(ticker);
+        lastResults = await resp.json();
+        fill.style.width = '100%';
+        text.textContent = `Done! ${lastResults.length} channels scanned.`;
+
+        renderResults(lastResults);
+      } catch (err) {
+        clearInterval(ticker);
+        text.textContent = 'Error: ' + err.message;
+      }
+
+      findBtn.disabled = false;
+      findBtn.textContent = 'Find Emails';
+    }
+
+    function renderResults(results) {
+      const tbody = document.getElementById('resultsBody');
+      tbody.innerHTML = '';
+
+      let found = 0, missing = 0;
+
+      results.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        const isFound = r.status === 'found';
+        if (isFound) found++; else missing++;
+
+        tr.innerHTML = `
+          <td style="color:#555">${i + 1}</td>
+          <td class="handle-cell">${escHtml(r.handle)}</td>
+          <td class="${isFound ? 'email-found' : 'email-missing'}">
+            ${isFound ? escHtml(r.email) : 'Not listed publicly'}
+          </td>
+          <td>
+            <span class="badge ${isFound ? 'badge-found' : 'badge-missing'}">
+              ${isFound ? 'Found' : 'Missing'}
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('countFound').textContent = found;
+      document.getElementById('countMissing').textContent = missing;
+      document.getElementById('resultsCard').style.display = 'block';
+    }
+
+    async function exportCSV() {
+      const resp = await fetch('/export-csv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ results: lastResults })
+      });
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'yt_emails.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function clearAll() {
+      document.getElementById('handlesInput').value = '';
+      document.getElementById('resultsCard').style.display = 'none';
+      document.getElementById('progress').style.display = 'none';
+      lastResults = [];
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>
